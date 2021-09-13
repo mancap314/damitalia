@@ -1,0 +1,2 @@
+BOARD_BREADTH = 8
+
