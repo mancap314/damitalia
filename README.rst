@@ -31,9 +31,9 @@ Features
 Credits
 -------
 
-A big up to [Federico Schiaffino](https://github.com/federicoschiaffino),
-[Matías Kambič](https://github.com/matiaskc) and [Curtis Wenger](https://github.com/ccwenger
-) from [Lewagon](https://www.lewagon.com/) in Amsterdam, who came up with the idea and a first implementation for the Italian checkers
+A big up to `Federico Schiaffino <https://github.com/federicoschiaffino>`_,
+`Matías Kambič <https://github.com/matiaskc>`_ and `Curtis Wenger <https://github.com/ccwenger>`_
+ from `Lewagon <https://www.lewagon.com/>`_ in Amsterdam, who came up with the idea and a first implementation for the Italian checkers
 in a record time, it was great working with you.
 
 This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template.
