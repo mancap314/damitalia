@@ -232,11 +232,13 @@ def can_move(next_square_stone: Stone) -> bool:
     return next_square_stone is None
 
 
-def get_captures(board_setting: Dict[int, Stone], color: str) -> Tuple[List[Move], List[Move]]:
+def get_captures_moves(board_setting: Dict[int, Stone], color: str) -> Tuple[List[Move], List[Move]]:
     if color not in ['black', 'white']:
         print(f"""ERROR: color must be 'black' or 'white'""")
     captures, moves = [], []
     for square_index, stone in board_setting.items():
+        if stone is None:
+            continue
         for move_direction in get_move_directions(stone):
             preliminary_ok, move, stone, next_square_stone =\
                 preliminary_check(color=color, board_setting=board_setting,
