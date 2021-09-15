@@ -3,21 +3,24 @@ import numpy as np
 from typing import Dict, List, Tuple, Union
 from .params import BOARD_BREADTH
 import itertools
+import logging
+import logging.config
+
+
+logging.config.fileConfig('logging.conf')
+
+# create logger
+logger = logging.getLogger('damitalia')
 
 
 class Stone:
     def __init__(self, stone_id: int, value: str, color: str):
-        """
-        stone_id [int]: id of the stone
-        value [str]: 'pawn' or 'queen'
-        color [str]: 'black' or 'white'
-        """
         if value not in ['pawn', 'queen']:
-            print("""ERROR: value for a stone must be 'pawn' or 'queen'.
+            logger.error("""value for a stone must be 'pawn' or 'queen'.
                     Stone creation cancelled.""")
             return
         if color not in ['white', 'black']:
-            print("""ERROR: color for a stone must be 'white' or 'black'.
+            logger.error("""color for a stone must be 'white' or 'black'.
                     Stone creation cancelled.""")
             return
         self.stone_id = stone_id
@@ -32,11 +35,11 @@ class Stone:
 
     def set_value(self, value) -> None:
         if value not in ['pawn', 'queen']:
-            print("""ERROR: value for a stone must be 'pawn' or 'queen'.
+            logger.error("""value for a stone must be 'pawn' or 'queen'.
                     Stone creation cancelled.""")
             return
         if value == 'pawn' and self.value == 'queen':
-            print(f"""ERROR: Stone {self.stone_id}: Impossible to change value
+            logger.error(f"""Stone {self.stone_id}: Impossible to change value
                     from 'queen' to 'stone'""")
             return
         self.value = value
@@ -59,20 +62,20 @@ class Move:
         direction = direction.reshape((-1,))
         if (start_square.shape[0] != 2 or start_square.min() < 0 or
                 start_square.max() >= BOARD_BREADTH):
-            print(f"""Error: {start_square} is an invalid square""")
+            logger.error(f"""{start_square} is an invalid square""")
             self.isvalid = False
         else:
             self.start_square = start_square
         if (direction.shape[0] != 2 or np.abs(direction).min() != 1 or
                 np.abs(direction).max() != 1):
-            print(f"""ERROR: {direction} is not a correct direction""")
+            logger.error(f"""{direction} is not a correct direction""")
             self.isvalid = False
         else:
             self.direction = direction
         self.landing_square = self.start_square + self.direction
         if (self.landing_square.max() >= BOARD_BREADTH or
                 self.landing_square.min() < 0):
-            print(f"""WARNING: move landing out of board""")
+            logger.warning(f"""move landing out of board""")
             self.isvalid = False
 
     def is_valid(self) -> bool:
@@ -129,12 +132,12 @@ def check_setting(setting: Dict[int, Union[Stone, None]]):
     is_valid = True
     if (sorted(list(setting.keys())) !=
             list(range(get_max_square_index()))):
-        print("""ERROR: keys for this dict don't fit index range given
+        logger.error("""keys for this dict don't fit index range given
                 by BOARD_RANGE defined in params.py""")
         is_valid = False
     for v in setting.values():
         if v is not None or not isinstance(v, Stone):
-            print("""ERROR: initial_setting must contain only None on
+            logger.error("""initial_setting must contain only None on
             Stone""")
             is_valid = False
             break
@@ -161,7 +164,7 @@ def coord_couple2int(coord: list) -> int:
     if isinstance(coord, tuple):
         coord = list(coord)
     if (coord[0] + coord[1] % 2) % 2 == 1:
-        print(f"""WARNING: coordinates {coord} correspond to a white square.
+        logger.warning(f"""coordinates {coord} correspond to a white square.
                 Return index of the previous black square""")
     index = int((BOARD_BREADTH / 2) * coord[1] + int(coord[0] / 2))
     return index
@@ -175,7 +178,7 @@ def get_action_space() -> List[Move]:
         move = Move(index, direction)
         if move.is_valid():
             action_space.append(move)
-    print(f"""INFO: {len(action_space)} moves in action_space""")
+    logger.info(f"""{len(action_space)} moves in action_space""")
     return action_space 
 
 
@@ -199,7 +202,7 @@ def preliminary_check(color: str, board_setting: Dict[int, Stone], square_index:
         return False, None, None, None
     next_square_id = move.get_landing_square_index()
     if next_square_id not in board_setting:
-        print(f"""ERROR: no indice {next_square_id} in
+        logger.error(f"""no indice {next_square_id} in
                 board_setting""")
         return False, None, None, None
     next_square_stone = board_setting.get(next_square_id)
@@ -219,7 +222,7 @@ def can_eat(color: str, board_setting: Dict[int, Stone], move: Move, stone: Ston
     if overnext_square_id == -1:
         return False
     if overnext_square_id not in board_setting:
-        print(f"""ERROR: no indice {overnext_square_id} in
+        logger.error(f"""no indice {overnext_square_id} in
                 board_setting""")
         return False
     overnext_square_stone = board_setting.get(overnext_square_id)
@@ -234,7 +237,7 @@ def can_move(next_square_stone: Stone) -> bool:
 
 def get_captures_moves(board_setting: Dict[int, Stone], color: str) -> Tuple[List[Move], List[Move]]:
     if color not in ['black', 'white']:
-        print(f"""ERROR: color must be 'black' or 'white'""")
+        logger.error("""color must be 'black' or 'white'""")
     captures, moves = [], []
     for square_index, stone in board_setting.items():
         if stone is None:
