@@ -92,17 +92,17 @@ def test_get_move_directions():
     assert set(captures) == set([(-1, -1), (1, -1), (1, 1), (-1, 1)])
 
 
-def test_get_captures_moves(v_board_setting, dual_board_setting):
-    captures, moves = damitalia.get_captures_moves(v_board_setting, 'white')
+def test_board_captures_moves(v_board_setting, dual_board_setting):
+    captures, moves = damitalia.board_captures_moves(v_board_setting, 'white')
     assert len(moves) == 0
     captures = [(capture.get_start_square_index(),
         capture.get_landing_square_index()) for capture in captures]
     assert set(captures) == set([(1, 4), (1, 5)])
-    captures, moves = damitalia.get_captures_moves(dual_board_setting, 'white')
+    captures, moves = damitalia.board_captures_moves(dual_board_setting, 'white')
     captures = [(capture.get_start_square_index(), 
         capture.get_landing_square_index()) for capture in captures]
     assert set(captures) == set([(5, 10)])
-    captures, moves = damitalia.get_captures_moves(dual_board_setting, 'black')
+    captures, moves = damitalia.board_captures_moves(dual_board_setting, 'black')
     captures = [(capture.get_start_square_index(), 
         capture.get_landing_square_index()) for capture in captures]
     assert set(captures) == set([(10, 5)])
