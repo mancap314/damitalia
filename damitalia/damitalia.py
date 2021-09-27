@@ -6,11 +6,12 @@ import itertools
 import logging
 import logging.config
 from copy import deepcopy
-
-
-logging.config.fileConfig('logging.conf')
+from itertools import product
 
 # create logger
+from os import path
+log_file_path = path.join(path.dirname(path.abspath(__file__)), 'logging.conf')
+logging.config.fileConfig(log_file_path)
 logger = logging.getLogger('damitalia')
 
 
@@ -44,6 +45,12 @@ class Stone:
                     'stone'", self.stone_id)
             return
         self.value = value
+
+    def __str__(self):
+        return f'<Stone {self.stone_id}: {self.color} {self.value}>'
+
+    def __repr__(self):
+        return self.__str__()
 
 
 class Move:
@@ -96,8 +103,14 @@ class Move:
             return -1
         return coord_couple2int(double_landing.tolist())
 
+    def __str__(self):
+        return f'<Move ({self.get_start_square_index()}, {self.get_landing_square_index()})>'
 
-class Board:
+    def __repr__(self):
+        return self.__str__()
+
+
+class Game:
     def __init__(self, initial_setting: Union[Dict[int, Union[Stone, None]], None] = None):
         if isinstance(initial_setting, dict):
             if not check_setting(initial_setting):
@@ -234,11 +247,14 @@ def can_move(next_square_stone: Stone) -> bool:
 
 
 def stone_captures_moves(board_setting: Dict[int, Union[None, Stone]],
-        square_index: int, check_moves: bool):
+        square_index: int, color: str, check_moves: bool):
     captures, moves = [], []
     stone = board_setting.get(square_index)
-    color = stone.get_color()
-    if stone is None:
+    logger.debug(f'square_index: {square_index}, color: {color}')
+    if stone is None or stone.get_color() != color:
+        logger.debug(f'stone empty or stone of wrong color at square_index\
+                {square_index} for color {color}. Board\
+                setting:\n{board_setting}')
         return [], []
     for move_direction in get_move_directions(stone):
         preliminary_ok, move, stone, next_square_stone =\
@@ -263,7 +279,7 @@ def board_captures_moves(board_setting: Dict[int, Union[None, Stone]], color: st
         check_moves = (len(captures) == 0)
         stone_captures, stone_moves =\
             stone_captures_moves(board_setting=board_setting,
-                    square_index=square_index, check_moves=check_moves)
+                    square_index=square_index, color=color, check_moves=check_moves)
         captures += stone_captures
         moves += stone_moves
     moves = moves if len(captures) == 0 else []
@@ -275,25 +291,39 @@ def get_board_setting_after(board_setting: Dict[int, Union[None, Stone]], move:
     stone = board_setting.get(move.get_start_square_index())
     board_setting_after = deepcopy(board_setting)
     board_setting_after[move.get_start_square_index()] = None
+    final_square = move.get_double_landing() if is_capture \
+            else move.get_landing_square_index()
     if is_capture:
         board_setting_after[move.get_landing_square_index()] = None
-        board_setting_after[move.get_double_landing()] = stone
-    else:
-        board_setting_after[move.get_landing_square_index()] = stone
+    board_setting_after[final_square] = stone
+    final_row = 0 if stone.get_color() == 'black' else BOARD_BREADTH - 1
+    if coord_int2couple(final_square)[1] == final_row:
+        stone.set_value('queen')
     return board_setting_after
 
 
-def get_capture_sequence(board_setting: Dict[int, Union[None, Stone]], capture: Move, 
-        color: str, stone_value: str, call_depth: int = 0) -> List[List[Move]]:
-    board_setting_after = get_board_setting_after(board_setting=board_setting,
-            move=capture, is_capture=True)
-    captures, _ = stone_captures_moves(board_setting=board_setting_after,
-            square_index=capture.get_double_landing(), check_moves=False)
+def ll_combine(l1: List[List], l2: List[List]) -> List[List]:
+    return [e1 + e2 for e1, e2 in product(l1, l2)]
+
+
+def get_capture_sequence(board_setting: Dict[int, Union[None, Stone]],
+        capture_sequence: List[List[Move]], square_index: int, color: str,
+        stone_value: str, call_depth: int = 0) -> List[List[Move]]:
+    captures, _ = stone_captures_moves(board_setting=board_setting,
+            square_index=square_index, color=color, check_moves=False)
+    logger.debug(f'captures: {captures}')
     if len(captures) == 0 or (stone_value == 'pawn' and call_depth == 2):
-        return [[capture] for capture in captures]
-    next_captures = [get_capture_sequence(board_setting=board_setting_after,
-        capture=capture, color=color, stone_value=stone_value, call_depth=call_depth+1) 
-        for capture in captures]
-    next_captures = [[capture] + next_capture for next_capture in
-            next_captures]
+        return ll_combine(capture_sequence, [captures])
+    next_captures = []
+    for capture in captures:
+        next_board_setting = get_board_setting_after(board_setting=board_setting, 
+                move=capture, is_capture=True)
+        next_capture_sequence = ll_combine(capture_sequence, [[capture]])
+        next_square_index = capture.get_double_landing()
+        next_capture = get_capture_sequence(board_setting=next_board_setting,
+            capture_sequence=next_capture_sequence,
+            square_index=next_square_index, color=color, 
+            stone_value=stone_value, call_depth=call_depth+1) 
+        next_captures += next_capture
+    logger.debug(f'next_captures: {next_captures}')
     return next_captures
