@@ -61,13 +61,13 @@ def forelast_board_setting():
 @pytest.fixture
 def capture_board_setting():
     board_setting = {i: None for i in range(damitalia.get_max_square_index() + 1)}
-    board_setting[1] = damitalia.Stone(0, 'pawn', 'white')
+    board_setting[1] = damitalia.Stone(0, 'queen', 'white')
     board_setting[4] = damitalia.Stone(1, 'pawn', 'black')
-    board_setting[5] = damitalia.Stone(2, 'pawn', 'black')
+    board_setting[5] = damitalia.Stone(2, 'queen', 'black')
     board_setting[13] = damitalia.Stone(3, 'pawn', 'black')
     board_setting[14] = damitalia.Stone(4, 'pawn', 'black')
     board_setting[20] = damitalia.Stone(5, 'pawn', 'black')
-    board_setting[21] = damitalia.Stone(6, 'pawn', 'black')
+    board_setting[21] = damitalia.Stone(6, 'queen', 'black')
     return board_setting
 
 
@@ -175,3 +175,27 @@ def test_get_capture_sequence(capture_board_setting):
             capture_sequence:\n{capture_sequence}')
     assert set(capture_sequence) == set([((1, 5), (10, 14)), ((1, 5), (10, 13),
         (17, 20)), ((1, 5), (10, 13), (17, 21))])
+
+
+def test_queen_capture(capture_board_setting):
+    capture_sequence = [damitalia.Move(1, [1, 1]), damitalia.Move(10, [-1, 1]),
+            damitalia.Move(17, [1, 1])]
+    qc = damitalia.queen_capture(board_setting=capture_board_setting,
+            capture_sequence=capture_sequence)
+    assert qc['first'] == 0
+    assert qc['number'] == 2
+
+
+def test_filter_capture_sequences(capture_board_setting):
+    capture_sequence_1 = {'value': 'queen', 
+            'sequence': [damitalia.Move(1, [1, 1]), damitalia.Move(10, [-1, 1]),
+                damitalia.Move(17, [1, 1])]}
+    capture_sequence_2 = {'value': 'queen', 
+            'sequence': [damitalia.Move(1, [1, 1]), damitalia.Move(10, [-1, 1]),
+                damitalia.Move(17, [-1, 1])]}
+    capture_sequences = [capture_sequence_1, capture_sequence_2]
+    filtered = damitalia.filter_capture_sequences(capture_sequences=capture_sequences,
+            board_setting=capture_board_setting)
+    assert len(filtered) == 1
+    assert filtered[0] == capture_sequence_1
+

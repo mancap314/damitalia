@@ -327,3 +327,48 @@ def get_capture_sequence(board_setting: Dict[int, Union[None, Stone]],
         next_captures += next_capture
     logger.debug(f'next_captures: {next_captures}')
     return next_captures
+
+
+def queen_capture(capture_sequence: List[Move], board_setting:
+        Dict[int, Union[None, Stone]])  -> Dict[str, int]:
+    res = {'first': -1, 'number': 0}
+    for i, move in enumerate(capture_sequence):
+        landing_square_index = move.get_landing_square_index()
+        stone = board_setting.get(landing_square_index)
+        if stone is None or stone.get_value() == 'pawn': 
+            continue
+        res['first'] = i if res['first'] == -1 else res['first']
+        res['number'] += 1
+    return res
+
+
+def filter_capture_sequences(capture_sequences: List[Dict], board_setting:
+        Dict[int, Union[None, Stone]]) -> List[Dict]:
+    filtered_sequence = []
+    for capture_sequence in capture_sequences:
+        if len(filtered_sequence) == 0:
+            filtered_sequence.append(capture_sequence)
+            continue
+        len_diff = (len(capture_sequence.get('sequence')) - 
+                len(filtered_sequence[0].get('sequence')))
+        if len_diff != 0:
+            if len_diff > 0:
+                filtered_sequence = [capture_sequence]
+            continue
+        value_c = capture_sequence.get('value'),
+        if value_c != filtered_sequence[0].get('value'):
+            if value_c == 'queen':
+                filtered_sequence = [capture_sequence]
+            continue
+        qcc = queen_capture(capture_sequence['sequence'], board_setting)
+        qcf = queen_capture(filtered_sequence[0], board_setting)
+        if qcc['first'] != qcf['first']:
+            if qcc['first'] > qcf['first']:
+                filtered_sequence = [capture_sequence]
+            continue
+        if qcc['number'] != qcf['number']:
+            if qcc['number'] > qcf['number']:
+                filtered_sequence = [capture_sequence]
+            continue
+        filtered_sequence.append(capture_sequence)
+    return filtered_sequence
